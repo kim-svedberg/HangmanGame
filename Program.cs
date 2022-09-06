@@ -2,6 +2,7 @@
 using System.Text;
 using System.Threading;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace HangmanGame
 {
@@ -9,79 +10,164 @@ namespace HangmanGame
     {
         static void Main(string[] args)
         {
-            /* Plan:
-              1. Welcome screen. Press any key to play.
-              2. Secret word appears + text that asks user to enter a letter. You start with 5 lives.
-              3. If correct, add the letter and the rest remain hidden. Letter that appears twice needs to be revealed at once. 
-              4. If wrong, say "Wrong! You lost a life" and then return to nr 2. "You have 4 lives"...
-              5. If they guess the same word again, say "You've already tried this letter" and don't remove a life. 
-              6. When the word is completed = Win screen. 
-              7. When all lives are lost = Losing screen. 
-              8. Ask user if they want to play again. */
 
             Console.Title = "Hangman Game";
 
-            Random randomWords = new Random();                                          //Create a wordlist to allow replayability.  
+            //Wordlist to allow replayability.  
+            Random randomWords = new Random();
             List<string> selectionOfWords = new List<string>
             {
                 "console", "computer", "coding", "games", "character", "storytelling"
             };
 
-            int index = randomWords.Next(selectionOfWords.Count);
-            string chosenWord = selectionOfWords[index];
+            //Welcoming screen.
+            Console.WriteLine("Welcome to Hangman!");
+            Console.WriteLine("\n\r");
+            Console.WriteLine("You'll have 5 tries to guess a secret word, letter by letter.");
+            Console.WriteLine("\n\r");
+            Console.WriteLine("Want to add your own word? Press Y and then Enter.");
+            Console.WriteLine("\n\r");
+            Console.WriteLine("Otherwise, just hit Enter to play."); 
+            string choosingYesOrContinue = Console.ReadLine();
+            Console.Clear();    
 
-            Console.WriteLine("Welcome to Hangman! You'll have 5 tries to guess a secret word, letter by letter.");
-            Console.WriteLine("Press any key to play: ");
-            Console.ReadKey(true);
+            //Room for improvement: Stop the program from crashing when user enters invalid answers. 
 
-            Console.Clear();
-
-            Console.WriteLine("The secret word: ");
-
-            foreach (char c in chosenWord)
+            string yesAddWord = "Y";
+            if (choosingYesOrContinue == yesAddWord)
             {
-                Console.Write("_ ");         // Need those iconic dashes in Hangman! 
+                Console.Clear();
+                Console.Write("Type your word and hit Enter to add it: ");
+                string usersOwnWord = Console.ReadLine();
+                Console.Clear();
+                Console.WriteLine(usersOwnWord + " has been added. Press any key to play.");
+                Console.ReadKey(true);
+                Console.Clear();
+
             }
 
 
+            //Randomly selects one of the words, which becomes the string-array "chosenWord". 
+            // Good: Creates dashes which are iconic for the game. 
+            //Improvement: Would look neater with spaces in-between the dashes.
+            int index = randomWords.Next(selectionOfWords.Count);
+            string chosenWord = selectionOfWords[index];
+            StringBuilder hidingChosenWord = new StringBuilder();
+
+            for (int i = 0; i < chosenWord.Length; i++)
+            {
+                hidingChosenWord.Append("_");
+            }
+            Console.Write(hidingChosenWord);
+
+            //Need to create variables so that the user can't:
+            // 1) Be wrong more than 5 times
+            // 2) Guess the same letter more than once 
+            // 3) Continue guessing once all the correct letters have been found. 
             int wordLength = chosenWord.Length;
             int lettersWrong = 0;
             int lettersRight = 0;
 
-           /* List<char> alreadyGuessed = new List<char>     
-            {
-                                                                        Need to do something like this, but not sure how. 
-            }; */
+            //A list for exhausted letters so that user doesn't lose a life/gain success if they guess the same letter again. 
+            List<char> alreadyGuessedLetters = new List<char> { };
 
-            while (lettersWrong != 5 && lettersRight != wordLength)
+
+            //Entering letters. 3 cases: (1) user already entered the letter, (2) the letter is correct, (3) the letter is wrong. 
+            //Loop ends when an outcome is triggered: (1) the user loses after entering an incorrect letter 5 times, (2) all correct letters have been entered and the user wins. 
+            while (lettersWrong <= 5 && lettersRight != wordLength)
             {
-                Console.WriteLine("\nChoose a letter in the English alphabet and hit Enter: ");
+
+                Console.Write("\nChoose a letter in the English alphabet and hit Enter: ");
                 string userInput = Console.ReadLine();
+                char userGuess = char.Parse(userInput);
 
-                foreach (char c in chosenWord)
+                //Room for improvement: If the user enters a capital letter, the program should still recognize it & convert it to lowercase. 
+
+
+                if (alreadyGuessedLetters.Contains(userGuess))
                 {
-                    if (userInput.Contains(c.ToString()))    //Can't use bool without converting 
-                    {
-
-                        lettersRight++;
-                        Console.WriteLine("Correct, that is part of the word.");
-                        Console.Beep(500, 500);
-                        break;
-                    }
-                    else
-                    {
-                        lettersWrong++;
-                        Console.WriteLine("Wrong! You lost a life.");
-                        Console.Beep(200, 500);
-                        break;
-                    }
+                    Console.WriteLine("You have already guessed this letter.");
                 }
 
+                else
+                {
+
+                    bool right = false;
+                    for (int i = 0; i < chosenWord.Length; i++)
+                    { if (userGuess == chosenWord[i]) { right = true; } }
+
+
+                    if (right)
+                    {
+                       
+                        alreadyGuessedLetters.Add(userGuess);
+                        Console.WriteLine("Correct, that is part of the word.");
+                        Console.Beep(500, 500);
+
+
+                        for (int k = 0; k < chosenWord.Length; k++)
+                        {
+                            if (userGuess == chosenWord[k])
+                            {
+
+                                hidingChosenWord[k] = userGuess;
+                                lettersRight++;
+                            }
+                        }
+
+                    }
+
+                    else
+                    {
+                        lettersWrong += 1;
+                        alreadyGuessedLetters.Add(userGuess);
+                        Console.WriteLine("Wrong! You lost a life.");
+                        Console.Beep(200, 500);
+                    }
+                    
+                    
+                    Console.WriteLine(hidingChosenWord);
+
+                }
+
+               
+                // Outcome 1) You lose
+                if (lettersWrong == 5)
+                {
+                    Console.BackgroundColor = ConsoleColor.Red;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    Console.Clear();
+                    Console.WriteLine("You lost the game! :( The secret word was: " + chosenWord);
+                    Console.Beep(250, 500);
+                    Console.Beep(200, 500);
+                    Console.Beep(150, 500);
+                    break;
+                }
+                // Outcome 2) You win
+                else if (lettersRight == wordLength) 
+                {
+                    Console.BackgroundColor = ConsoleColor.Green;
+                    Console.ForegroundColor = ConsoleColor.Black;
+                    Console.Clear();
+                    Console.WriteLine("You won the game! :) The secret word was: " + chosenWord);
+                    Console.Beep(200, 500);
+                    Console.Beep(250, 500);
+                    Console.Beep(300, 500);
+
+                    
+                    
+                    //Good: Two different sounds and colors when winning/losing. 
+                   
+
+                }
+
+              
+
+
+
+
+
             }
-            Console.WriteLine("Thank you for playing the game! :) The secret word was: " + chosenWord);
-
-
-
         }
     }
-}
+} 
