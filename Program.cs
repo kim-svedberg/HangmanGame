@@ -17,6 +17,7 @@ namespace HangmanGame
             Random randomWords = new Random();
             List<string> selectionOfWords = new List<string>
             {
+               
                 "console", "computer", "coding", "games", "character", "storytelling"
             };
 
@@ -41,6 +42,7 @@ namespace HangmanGame
                 string usersOwnWord = Console.ReadLine();
                 Console.Clear();
                 Console.WriteLine(usersOwnWord + " has been added. Press any key to play.");
+                selectionOfWords.Add(usersOwnWord);
                 Console.ReadKey(true);
                 Console.Clear();
 
